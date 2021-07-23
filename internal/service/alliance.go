@@ -20,13 +20,14 @@ package service
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
+
 	"github.com/polynetwork/explorer/internal/common"
 	"github.com/polynetwork/explorer/internal/ctx"
 	"github.com/polynetwork/explorer/internal/log"
 	"github.com/polynetwork/explorer/internal/model"
-	"github.com/polynetwork/poly/consensus/vbft/config"
+	vconfig "github.com/polynetwork/poly/consensus/vbft/config"
 	"github.com/polynetwork/poly/core/types"
-	"time"
 )
 
 // loadAllianceCrossTxFromChain synchronizes cross txs from Alliance network
@@ -61,7 +62,7 @@ func (srv *Service) LoadAllianceCrossTxFromChain(context *ctx.Context) {
 				err = srv.dao.TxUpdateChainInfoById(tx, chainInfo)
 				if err != nil {
 					tx.Rollback()
-					chainInfo.Height --
+					chainInfo.Height--
 					chainInfo.In -= in
 					chainInfo.Out -= out
 					log.Errorf("LoadAllianceCrossTxFromChain: update ChainInfo %s", err)
@@ -69,7 +70,7 @@ func (srv *Service) LoadAllianceCrossTxFromChain(context *ctx.Context) {
 				}
 				if err = tx.Commit(); err != nil {
 					tx.Rollback()
-					chainInfo.Height --
+					chainInfo.Height--
 					chainInfo.In -= in
 					chainInfo.Out -= out
 					log.Errorf("LoadAllianceCrossTxFromChain: commit tx", err)
@@ -116,7 +117,7 @@ func (srv *Service) saveAllianceCrossTxsByHeight(tx *sql.Tx, chainInfo *model.Ch
 				}
 				fchainid := uint32(states[1].(float64))
 				tchainid := uint32(states[2].(float64))
-				if !srv.IsMonitorChain(fchainid){
+				if !srv.IsMonitorChain(fchainid) {
 					continue
 				}
 				if !srv.IsMonitorChain(tchainid) {
@@ -143,7 +144,7 @@ func (srv *Service) saveAllianceCrossTxsByHeight(tx *sql.Tx, chainInfo *model.Ch
 						mctx.Key = states[3].(string)
 					}
 				} else {
-					if fchainid == srv.c.Ethereum.ChainId || fchainid == srv.c.Cosmos.ChainId || fchainid == common.CHAIN_BSC || fchainid == common.CHAIN_HECO || fchainid == common.CHAIN_O3 || fchainid == common.CHAIN_OK {
+					if fchainid == srv.c.Ethereum.ChainId || fchainid == srv.c.Cosmos.ChainId || fchainid == common.CHAIN_BSC || fchainid == common.CHAIN_HECO || fchainid == common.CHAIN_O3 || fchainid == common.CHAIN_OK || fchainid == common.CHAIN_MATIC {
 						mctx.FTxHash = states[3].(string)
 					} else {
 						mctx.FTxHash = common.HexStringReverse(states[3].(string))
@@ -171,7 +172,7 @@ func (srv *Service) parserValidator(header *types.Header) {
 	if blkInfo.NewChainConfig == nil {
 		return
 	}
-	var bookkeepers  []string
+	var bookkeepers []string
 	for _, peer := range blkInfo.NewChainConfig.Peers {
 		bookkeepers = append(bookkeepers, peer.ID)
 	}

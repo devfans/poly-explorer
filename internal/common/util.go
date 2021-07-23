@@ -19,28 +19,30 @@ package common
 
 import (
 	"encoding/hex"
-	ontcommon "github.com/ontio/ontology/common"
 	"strconv"
+
+	ontcommon "github.com/ontio/ontology/common"
 )
 
 const (
-	CHAIN_POLY   = 0
-	CHAIN_BTC    = 1
-	CHAIN_ETH    = 2
-	CHAIN_ONT    =  3
+	CHAIN_POLY = 0
+	CHAIN_BTC  = 1
+	CHAIN_ETH  = 2
+	CHAIN_ONT  = 3
 	//CHAIN_NEO    = 5
 	CHAIN_NEO    = 4
 	CHAIN_COSMOS = 5
-	CHAIN_BSC = 6
-	CHAIN_HECO = 7
-	CHAIN_O3 = 10
-	CHAIN_OK = 12
+	CHAIN_BSC    = 6
+	CHAIN_HECO   = 7
+	CHAIN_O3     = 10
+	CHAIN_OK     = 12
+	CHAIN_MATIC  = 202
 )
 
 const (
 	BTC_TOKEN_NAME = "btc"
 	BTC_TOKEN_HASH = "0000000000000000000000000000000000000011"
-	UNISWAP_NAME = "UNI_V2_ETH_WBTC"
+	UNISWAP_NAME   = "UNI_V2_ETH_WBTC"
 )
 
 func HexString2Base58Address(address string) string {
@@ -81,4 +83,3 @@ func HexStringReverse(value string) string {
 	bb := HexReverse(aa)
 	return hex.EncodeToString(bb)
 }
-
