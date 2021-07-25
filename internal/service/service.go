@@ -20,6 +20,12 @@ package service
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"runtime/debug"
+	"strconv"
+	"strings"
+	"time"
+
 	cosmos_types "github.com/cosmos/cosmos-sdk/types"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/joeqian10/neo-gogogo/helper"
@@ -33,11 +39,6 @@ import (
 	restclient "github.com/polynetwork/explorer/internal/server/restful/client"
 	"github.com/polynetwork/explorer/internal/server/rpc/client"
 	"github.com/shopspring/decimal"
-	"math/big"
-	"runtime/debug"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Service struct {
@@ -64,9 +65,9 @@ func New(c *conf.Config) (s *Service) {
 		allianceClient: client.NewAllianceSDK(c),
 		bitcoinClient:  restclient.NewBtcTools(c),
 		cosmosClient:   client.NewCosmosClient(c),
-		chain: make([]*model.ChainInfo, 0),
-		tokens: make([]*model.CrossChainToken, 0),
-		coinPrice: make(map[string]float64, 0),
+		chain:          make([]*model.ChainInfo, 0),
+		tokens:         make([]*model.CrossChainToken, 0),
+		coinPrice:      make(map[string]float64, 0),
 	}
 	return s
 }
@@ -82,7 +83,7 @@ func (s *Service) Close() {
 	s.ethClient.Close()
 }
 
-func (exp *Service) GetChainInfos() ([]*model.ChainInfo,[]*model.CrossChainToken, error) {
+func (exp *Service) GetChainInfos() ([]*model.ChainInfo, []*model.CrossChainToken, error) {
 	// get all chains
 	chainInfos, err := exp.dao.SelectAllChainInfos()
 	if err != nil {
@@ -121,8 +122,8 @@ func (exp *Service) GetChainInfos() ([]*model.ChainInfo,[]*model.CrossChainToken
 		}
 		if exist == false {
 			crosschainToken := &model.CrossChainToken{
-				Name: token.Token,
-				Tokens: make([]*model.ChainToken ,0),
+				Name:   token.Token,
+				Tokens: make([]*model.ChainToken, 0),
 			}
 			crosschainToken.Tokens = append(crosschainToken.Tokens, token)
 			crosschainTokens = append(crosschainTokens, crosschainToken)
@@ -148,7 +149,7 @@ func (exp *Service) UpdateCoinPrice() {
 	now := time.Now()
 	nowUnix := uint32(now.Unix())
 	end := (nowUnix / 60)
-	if end % exp.c.Server.AssetStatisticTimeslot != 0 {
+	if end%exp.c.Server.AssetStatisticTimeslot != 0 {
 		return
 	}
 	log.Infof("do update coin price at time: %s", now.Format("2006-01-02 15:04:05"))
@@ -313,7 +314,7 @@ func (exp *Service) AssetInfo(tokenHash string) (string, string) {
 	return "unknow token", "unknow token"
 }
 
-func (exp *Service) GetToken(chainId uint32, tokenHash string) (*model.ChainToken) {
+func (exp *Service) GetToken(chainId uint32, tokenHash string) *model.ChainToken {
 	chainInfo := exp.GetChain(chainId)
 	if chainInfo == nil {
 		return nil
@@ -326,7 +327,7 @@ func (exp *Service) GetToken(chainId uint32, tokenHash string) (*model.ChainToke
 	return nil
 }
 
-func (exp *Service) GetToken1(tokenHash string) (*model.ChainToken) {
+func (exp *Service) GetToken1(tokenHash string) *model.ChainToken {
 	for _, chainInfo := range exp.chain {
 		for _, token := range chainInfo.Tokens {
 			if token.Hash == tokenHash {
@@ -337,7 +338,7 @@ func (exp *Service) GetToken1(tokenHash string) (*model.ChainToken) {
 	return nil
 }
 
-func (exp *Service) SearchToken(name string, chainId uint32) (*model.ChainToken) {
+func (exp *Service) SearchToken(name string, chainId uint32) *model.ChainToken {
 	for _, chainInfo := range exp.chain {
 		if chainInfo.Id != chainId {
 			continue
@@ -434,7 +435,7 @@ func (exp *Service) FormatFee(chain uint32, fee uint64) string {
 		precision_new := decimal.New(int64(1000000000000000000), 0)
 		fee_new := decimal.New(int64(fee), 0)
 		return fee_new.Div(precision_new).String() + " O3"
-	}  else if chain == common.CHAIN_HECO {
+	} else if chain == common.CHAIN_HECO {
 		precision_new := decimal.New(int64(1000000000000000000), 0)
 		fee_new := decimal.New(int64(fee), 0)
 		return fee_new.Div(precision_new).String() + " HT"
@@ -442,6 +443,10 @@ func (exp *Service) FormatFee(chain uint32, fee uint64) string {
 		precision_new := decimal.New(int64(1000000000000000000), 0)
 		fee_new := decimal.New(int64(fee), 0)
 		return fee_new.Div(precision_new).String() + " OKT"
+	} else if chain == common.CHAIN_MATIC {
+		precision_new := decimal.New(int64(1000000000000000000), 0)
+		fee_new := decimal.New(int64(fee), 0)
+		return fee_new.Div(precision_new).String() + " MATIC"
 	} else {
 		precision_new := decimal.New(int64(1), 0)
 		fee_new := decimal.New(int64(fee), 0)
@@ -451,7 +456,7 @@ func (exp *Service) FormatFee(chain uint32, fee uint64) string {
 
 func (exp *Service) Precent(a uint64, b uint64) string {
 	c := float64(a) / float64(b)
-	return fmt.Sprintf("%.2f%%", c * 100)
+	return fmt.Sprintf("%.2f%%", c*100)
 }
 
 func (exp *Service) DayOfTime(t uint32) uint32 {
@@ -483,4 +488,3 @@ func (exp *Service) DayOfTimeSubOne(t uint32) uint32 {
 	time_t_unix := uint32(end_t_new.AddDate(0, 0, -1).Unix())
 	return time_t_unix
 }
-
