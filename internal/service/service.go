@@ -422,6 +422,11 @@ func (exp *Service) FormatFee(chain uint32, fee uint64) string {
 		fee_new := decimal.New(int64(fee), 0)
 		fee := fee_new.Div(precision_new).BigInt().Int64()
 		return strconv.FormatInt(fee, 10) + " GAS"
+	} else if chain == common.CHAIN_NEO3 {
+		precision_new := decimal.New(int64(100000000), 0)
+		fee_new := decimal.New(int64(fee), 0)
+		fee := fee_new.Div(precision_new).BigInt().Int64()
+		return strconv.FormatInt(fee, 10) + " GAS"
 	} else if chain == common.CHAIN_COSMOS {
 		precision_new := decimal.New(int64(100000000), 0)
 		fee_new := decimal.New(int64(fee), 0)
