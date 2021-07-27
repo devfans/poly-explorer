@@ -13,6 +13,6 @@ const (
 	CHAIN_HECO   = 7
 	CHAIN_O3     = 10
 	CHAIN_OK     = 12
-	CHAIN_MATIC  = 16
+	CHAIN_MATIC  = 17
 	CHAIN_NEO3   = 88
 )
