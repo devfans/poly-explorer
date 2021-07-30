@@ -19,7 +19,7 @@ func (srv *Service) DoAssetStatistic() {
 	nowUnix := uint32(now.Unix())
 	end := (nowUnix / 60)
 	start := end - srv.c.Server.AssetStatisticTimeslot
-	if end % srv.c.Server.AssetStatisticTimeslot != 0 {
+	if end%srv.c.Server.AssetStatisticTimeslot != 0 {
 		return
 	}
 	log.Infof("do asset statistic at time: %s", now.Format("2006-01-02 15:04:05"))
@@ -31,7 +31,7 @@ func (srv *Service) DoAssetStatistic() {
 	//
 	needUpdatedHistory := srv.checkHistory(start)
 	if needUpdatedHistory != nil {
-		needUpdatedHistory = srv.updatePrecision(needUpdatedHistory)
+		//needUpdatedHistory = srv.updatePrecision(needUpdatedHistory)
 		err := srv.updateAssetStatisticsByCoinPrice(needUpdatedHistory, coinPrice)
 		if err != nil {
 			return
@@ -44,7 +44,7 @@ func (srv *Service) DoAssetStatistic() {
 	if latestUpdated == nil {
 		return
 	}
-	latestUpdated = srv.updatePrecision(latestUpdated)
+	//latestUpdated = srv.updatePrecision(latestUpdated)
 	err := srv.updateAssetStatisticsByCoinPrice(latestUpdated, coinPrice)
 	if err != nil {
 		return
@@ -157,7 +157,7 @@ func (srv *Service) updateAssetStatisticsByCoinPrice(assetStatistics []*model.As
 			assetStatistic.Amount_usd = big.NewInt(0)
 			assetStatistic.Amount_btc = big.NewInt(0)
 		} else {
-			amount := new(big.Int).Mul(assetStatistic.Amount, big.NewInt(int64(coinPrice * 100)))
+			amount := new(big.Int).Mul(assetStatistic.Amount, big.NewInt(int64(coinPrice*100)))
 			assetStatistic.Amount_usd = amount
 			amount_btc := new(big.Int).Div(assetStatistic.Amount_usd, big.NewInt(int64(bitcoinPrice)))
 			assetStatistic.Amount_btc = amount_btc
@@ -180,12 +180,12 @@ func (srv *Service) latestUpdated(start uint32, end uint32) (res []*model.AssetS
 	assetStatistics := make([]*model.AssetStatistic, 0)
 	for _, assetAddressNum := range assetAddressNums {
 		statistic := &model.AssetStatistic{
-			Name: assetAddressNum.Name,
-			Addressnum: assetAddressNum.AddNum,
-			Amount: big.NewInt(0),
-			Amount_usd: big.NewInt(0),
-			Amount_btc: big.NewInt(0),
-			TxNum: 0,
+			Name:         assetAddressNum.Name,
+			Addressnum:   assetAddressNum.AddNum,
+			Amount:       big.NewInt(0),
+			Amount_usd:   big.NewInt(0),
+			Amount_btc:   big.NewInt(0),
+			TxNum:        0,
 			LatestUpdate: start,
 		}
 		assetStatistics = append(assetStatistics, statistic)
@@ -203,12 +203,12 @@ func (srv *Service) latestUpdated(start uint32, end uint32) (res []*model.AssetS
 		}
 		if statistic == nil {
 			statistic = &model.AssetStatistic{
-				Name: assetTxInfo.Name,
-				Addressnum: 0,
-				Amount: assetTxInfo.Amount,
-				Amount_usd: big.NewInt(0),
-				Amount_btc: big.NewInt(0),
-				TxNum: assetTxInfo.TxNum,
+				Name:         assetTxInfo.Name,
+				Addressnum:   0,
+				Amount:       assetTxInfo.Amount,
+				Amount_usd:   big.NewInt(0),
+				Amount_btc:   big.NewInt(0),
+				TxNum:        assetTxInfo.TxNum,
 				LatestUpdate: start,
 			}
 			assetStatistics = append(assetStatistics, statistic)
@@ -282,13 +282,12 @@ func (srv *Service) updateUniswap(amount *big.Int) *big.Int {
 	return cc
 }
 
-
 func (srv *Service) DoTransferStatistic() {
 	now := time.Now()
 	nowUnix := uint32(now.Unix())
 	end := (nowUnix / 60)
 	start := end - srv.c.Server.TransferStatisticTimeslot
-	if end % srv.c.Server.TransferStatisticTimeslot != 0 {
+	if end%srv.c.Server.TransferStatisticTimeslot != 0 {
 		return
 	}
 	log.Infof("do transfer statistic at time: %s", now.Format("2006-01-02 15:04:05"))
@@ -334,14 +333,14 @@ func (srv *Service) makeTransferStatistic(tokenStatistic *model.TransferStatisti
 		return
 	}
 	if token.Precision >= 100 {
-		inAmount := new(big.Int).Div(txInInfo.Amount, big.NewInt(int64(token.Precision / 100)))
+		inAmount := new(big.Int).Div(txInInfo.Amount, big.NewInt(int64(token.Precision/100)))
 		tokenStatistic.Amount = new(big.Int).Add(tokenStatistic.Amount, inAmount)
-		outAmount := new(big.Int).Div(txOutInfo.Amount, big.NewInt(int64(token.Precision / 100)))
+		outAmount := new(big.Int).Div(txOutInfo.Amount, big.NewInt(int64(token.Precision/100)))
 		tokenStatistic.Amount = new(big.Int).Sub(tokenStatistic.Amount, outAmount)
 	} else {
-		inAmount := new(big.Int).Mul(txInInfo.Amount, big.NewInt(int64(100 / token.Precision)))
+		inAmount := new(big.Int).Mul(txInInfo.Amount, big.NewInt(int64(100/token.Precision)))
 		tokenStatistic.Amount = new(big.Int).Add(tokenStatistic.Amount, inAmount)
-		outAmount := new(big.Int).Mul(txOutInfo.Amount, big.NewInt(int64(100 / token.Precision)))
+		outAmount := new(big.Int).Mul(txOutInfo.Amount, big.NewInt(int64(100/token.Precision)))
 		tokenStatistic.Amount = new(big.Int).Sub(tokenStatistic.Amount, outAmount)
 	}
 	err = srv.dao.UpdateTransferStatistic(tokenStatistic)
@@ -350,4 +349,3 @@ func (srv *Service) makeTransferStatistic(tokenStatistic *model.TransferStatisti
 		return
 	}
 }
-
