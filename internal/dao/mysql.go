@@ -27,54 +27,54 @@ import (
 )
 
 const (
-	_insertTChainTx                 = "insert into tchain_tx(chain_id, txhash, state, tt, fee, height, fchain, contract, rtxhash) values (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `height` = VALUES(`height`)"
-	_insertTChainTransfer          = "insert into tchain_transfer(txhash, chain_id, tt, asset, xfrom, xto, amount) values(?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
-	_insertFChainTx                 = "insert into fchain_tx(chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam) values (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `height` = VALUES(`height`)"
-	_insertFChainTransfer          = "insert into fchain_transfer(txhash, chain_id, tt, asset, xfrom, xto, amount, tochainid, toasset, touser) values (?,?,?,?,?,?,?,?,?,?)ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
-	_insertMChainTx                 = "insert into mchain_tx(chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey) values (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
-	_selectMChainTxCount            = "select count(*) from mchain_tx"
+	_insertTChainTx       = "insert into tchain_tx(chain_id, txhash, state, tt, fee, height, fchain, contract, rtxhash) values (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `height` = VALUES(`height`)"
+	_insertTChainTransfer = "insert into tchain_transfer(txhash, chain_id, tt, asset, xfrom, xto, amount) values(?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
+	_insertFChainTx       = "insert into fchain_tx(chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam) values (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `height` = VALUES(`height`)"
+	_insertFChainTransfer = "insert into fchain_transfer(txhash, chain_id, tt, asset, xfrom, xto, amount, tochainid, toasset, touser) values (?,?,?,?,?,?,?,?,?,?)ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
+	_insertMChainTx       = "insert into mchain_tx(chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey) values (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `tt` = VALUES(`tt`)"
+	_selectMChainTxCount  = "select count(*) from mchain_tx"
 	//_selectMChainTxByLimit          = "select A.chain_id, A.txhash, case when B.txhash is null OR C.txhash is null THEN 0 ELSE 1 END as state, A.tt, A.fee, A.height, A.fchain, A.tchain from mchain_tx A left join tchain_tx B on A.txhash = B.rtxhash left join fchain_tx C on A.ftxhash = C.txhash order by A.height desc limit ?,?;"
-	_selectMChainTxByLimit          = "select C.chain_id, C.txhash, case when D.txhash is null THEN 0 ELSE 1 END as state, C.tt, C.fee, C.height, C.fchain, C.tchain from ((select B.chain_id, B.txhash, B.tt, B.fee, B.height, B.fchain, B.tchain from (select txhash, chain_Id, tt, height, tchain from fchain_tx order by tt desc limit ?, ?) A LEFT JOIN mchain_tx B ON B.ftxhash = A.txhash where B.txhash is not null) union all (select A.chain_id, case when A.chain_id = ? then A.xkey else A.txhash end as txhash, A.tt, A.fee, A.height, A.chain_id as fchain, A.tchain from (select txhash, xkey, chain_Id, tt, fee, height, tchain from fchain_tx order by tt desc limit ?, ?) A LEFT JOIN mchain_tx B ON B.ftxhash = A.txhash where B.txhash is null)) C LEFT JOIN tchain_tx D on C.txhash = D.rtxhash order by C.tt desc"
-	_selectMChainTxByHash           = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey from mchain_tx where txhash = ?"
-	_selectMChainTxByFHash          = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey from mchain_tx where ftxhash = ? and fchain = ?"
-	_selectFChainTxByHash           = "select chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam from fchain_tx where case when chain_id = ? then xkey = ? else txhash = ? end"
-	_selectFChainTxByHash1           = "select chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam from fchain_tx where txhash = ? and chain_id = ?"
-	_selectFChainTxByTime           = "select chain_id, unix_timestamp(FROM_UNIXTIME(tt,'%Y%m%d')) days, count(*) from fchain_tx where tt > ? and tt < ? group by chain_id, days order by chain_id, days desc"
-	_selectFChainTransferByHash    = "select txhash, asset, xfrom, xto, amount, tochainid, toasset, touser from fchain_transfer where txhash = ?"
-	_selectTChainTxByHash           = "select chain_id, txhash, state, tt, fee, height, fchain, contract,rtxhash from tchain_tx where txhash = ?"
-	_selectTChainTxByMHash          = "select chain_id, txhash, state, tt, fee, height, fchain, contract,rtxhash from tchain_tx where rtxhash = ?"
-	_selectTChainTxByTime           = "select chain_id, unix_timestamp(FROM_UNIXTIME(tt,'%Y%m%d')) days, count(*) from tchain_tx where tt > ? and tt < ? group by chain_id, days order by chain_id, days desc"
-	_selectTChainTransferByHash    = "select txhash, asset, xfrom, xto, amount from tchain_transfer where txhash = ?"
-	_selectChainAddresses           = "select chain_id, count(distinct addr) from (select chain_id,xfrom as addr from fchain_transfer union all select chain_id,xto as addr from tchain_transfer) c group by c.chain_id"
-	_selectAllChainInfos            = "select xname, id, xtype, height, txin, txout from chain_info order by id"
-	_selectContractById             = "select id, contract from chain_contract where id = ?"
-	_selectTokenById                = "select id, xtoken, hash, xname, xtype, xprecision, xdesc from chain_token where id = ?"
-	_selectTokenCount               = "select count(distinct xtoken) from chain_token"
-	_updateChainInfoById            = "update chain_info set xname = ?, height = ?, txin = ?, txout = ? where id = ?"
-	_selectAllianceTx               = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain,xkey from mchain_tx where (tchain = ? or fchain = ?) and height > ? order by height"
-	_selectBitcoinUnconfirmTx       = "select txhash from tchain_tx where chain_id = ? and tt = ?"
-	_updateBitcoinConfirmTx         = "update tchain_tx set tt = ?, height = ?, state = 1, fee = ? where txhash = ?"
-	_updateBitcoinConfirmTransfer  = "update tchain_transfer set xto = ?, amount = ? where txhash = ?"
-	_selectTokenTxList              = "select case when b.chain_id = ? then b.xkey else b.txhash end as txhash,a.xfrom,a.xto,a.amount,b.height,b.tt,1 as direct from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.asset = ? union all select d.txhash,c.xfrom,c.xto,c.amount,d.height,d.tt,2 as direct from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.asset = ? order by height desc limit ?,?;"
-	_selectTokenTxTotal             = "select sum(cnt) from (select count(*) as cnt from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.asset = ? union all select count(*) as cnt from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.asset = ?) t"
-	_selectAddressTxList            = "select case when b.chain_id = ? then b.xkey else b.txhash end as txhash,a.xfrom,a.xto,a.asset,a.amount,b.height,b.tt,1 as direct from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.xfrom = ? and b.chain_id = ? union all select d.txhash,c.xfrom,c.xto,c.asset,c.amount,d.height,d.tt,2 as direct from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.xto = ? and d.chain_id = ? order by height desc limit ?,?;"
-	_selectAddressTxTotal           = "select sum(cnt) from (select count(*) as cnt from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.xfrom = ? and b.chain_id = ? union all select count(*) as cnt from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.xto = ? and d.chain_id = ?) t"
-	_insertPolyValidator            = "insert into poly_validators(height, validators) values(?,?)"
-	_selectPolyValidator            = "select height, validators from poly_validators order by height desc limit 1"
-	_insertAssetStatistic           = "insert into asset_statistic(xname, addressnum, amount,amount_btc, amount_usd, txnum, latestupdate) values (?,0,0,0,0,0,0) ON DUPLICATE KEY UPDATE txnum=txnum"
-	_selectAssetAddressNum          =  "select token, count(distinct addr) as addrNum from (select B.xtoken as token, A.xfrom as addr from fchain_transfer as A inner join chain_token as B on A.asset = B.hash union all select D.xtoken as token, C.xto as addr from tchain_transfer as C inner join chain_token as D on C.asset = D.hash) E group by E.token"
-	_selectAssetTxInfo              =  "select B.xtoken, amount from fchain_transfer as A inner join chain_token as B on A.asset = B.hash where A.tt >= ? and A.tt < ? order by B.xtoken"
-	_updateStatistic                =  "update asset_statistic set addressnum = ?, amount = amount + ?, amount_btc = amount_btc + ?, amount_usd = amount_usd + ?, txnum = txnum + ?, latestupdate = ? where xname = ? and latestupdate = ?"
-	_selectAssetStatistic           =  "select xname, addressnum, amount, amount_btc, amount_usd, txnum, latestupdate from asset_statistic where latestupdate < ? order by amount_usd desc"
-	_selectAssetHistory             =  "select A.amount from fchain_transfer as A inner join chain_token as B on A.asset = B.hash where A.tt >= ? and A.tt < ? and B.xtoken = ?"
-	_insertTransferStatistic        =  "insert into transfer_statistic(asset, amount, latestin, latestout) values(?, 0, 0, 0) ON DUPLICATE KEY UPDATE amount=amount"
-	_selectTransferStatistic        =  "select asset, amount, latestin, latestout from transfer_statistic"
-	_selectTransferOutHistory       =  "select amount, tt from fchain_transfer where asset = ? and tt > ?"
-	_selectTransferInHistory        =  "select amount, tt from tchain_transfer where asset = ? and tt > ?"
-	_updateTransferStatistic        =  "update transfer_statistic set amount = ?, latestin = ?, latestout = ? where asset = ?"
-	_selectAllTransferStatistic     =  "select A.asset, A.amount, B.xtoken, B.id, B.xname, D.xname, D.id  from transfer_statistic A left join chain_token B on A.asset = B.hash left join chain_token_bind C on A.asset = C.hash_src left join chain_token D on C.hash_dest = D.hash"
-	_selectAllTransferStatisticInChain     =  "select A.asset, A.amount, B.xtoken, B.id, B.xname, D.xname, D.id  from transfer_statistic A left join chain_token B on A.asset = B.hash left join chain_token_bind C on A.asset = C.hash_src left join chain_token D on C.hash_dest = D.hash where B.id = ?"
-	)
+	_selectMChainTxByLimit             = "select C.chain_id, C.txhash, case when D.txhash is null THEN 0 ELSE 1 END as state, C.tt, C.fee, C.height, C.fchain, C.tchain from ((select B.chain_id, B.txhash, B.tt, B.fee, B.height, B.fchain, B.tchain from (select txhash, chain_Id, tt, height, tchain from fchain_tx order by tt desc limit ?, ?) A LEFT JOIN mchain_tx B ON B.ftxhash = A.txhash where B.txhash is not null) union all (select A.chain_id, case when A.chain_id = ? then A.xkey else A.txhash end as txhash, A.tt, A.fee, A.height, A.chain_id as fchain, A.tchain from (select txhash, xkey, chain_Id, tt, fee, height, tchain from fchain_tx order by tt desc limit ?, ?) A LEFT JOIN mchain_tx B ON B.ftxhash = A.txhash where B.txhash is null)) C LEFT JOIN tchain_tx D on C.txhash = D.rtxhash order by C.tt desc"
+	_selectMChainTxByHash              = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey from mchain_tx where txhash = ?"
+	_selectMChainTxByFHash             = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain, xkey from mchain_tx where ftxhash = ? and fchain = ?"
+	_selectFChainTxByHash              = "select chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam from fchain_tx where case when chain_id = ? then xkey = ? else txhash = ? end"
+	_selectFChainTxByHash1             = "select chain_id, txhash, state, tt, fee, height, xuser, tchain, contract, xkey, xparam from fchain_tx where txhash = ? and chain_id = ?"
+	_selectFChainTxByTime              = "select chain_id, unix_timestamp(FROM_UNIXTIME(tt,'%Y%m%d')) days, count(*) from fchain_tx where tt > ? and tt < ? group by chain_id, days order by chain_id, days desc"
+	_selectFChainTransferByHash        = "select txhash, asset, xfrom, xto, amount, tochainid, toasset, touser from fchain_transfer where txhash = ?"
+	_selectTChainTxByHash              = "select chain_id, txhash, state, tt, fee, height, fchain, contract,rtxhash from tchain_tx where txhash = ?"
+	_selectTChainTxByMHash             = "select chain_id, txhash, state, tt, fee, height, fchain, contract,rtxhash from tchain_tx where rtxhash = ?"
+	_selectTChainTxByTime              = "select chain_id, unix_timestamp(FROM_UNIXTIME(tt,'%Y%m%d')) days, count(*) from tchain_tx where tt > ? and tt < ? group by chain_id, days order by chain_id, days desc"
+	_selectTChainTransferByHash        = "select txhash, asset, xfrom, xto, amount from tchain_transfer where txhash = ?"
+	_selectChainAddresses              = "select chain_id, count(distinct addr) from (select chain_id,xfrom as addr from fchain_transfer union all select chain_id,xto as addr from tchain_transfer) c group by c.chain_id"
+	_selectAllChainInfos               = "select xname, id, xtype, height, txin, txout from chain_info order by id"
+	_selectContractById                = "select id, contract from chain_contract where id = ?"
+	_selectTokenById                   = "select id, xtoken, hash, xname, xtype, xprecision, xdesc from chain_token where id = ?"
+	_selectTokenCount                  = "select count(distinct xtoken) from chain_token"
+	_updateChainInfoById               = "update chain_info set xname = ?, height = ?, txin = ?, txout = ? where id = ?"
+	_selectAllianceTx                  = "select chain_id, txhash, state, tt, fee, height, fchain, ftxhash, tchain,xkey from mchain_tx where (tchain = ? or fchain = ?) and height > ? order by height"
+	_selectBitcoinUnconfirmTx          = "select txhash from tchain_tx where chain_id = ? and tt = ?"
+	_updateBitcoinConfirmTx            = "update tchain_tx set tt = ?, height = ?, state = 1, fee = ? where txhash = ?"
+	_updateBitcoinConfirmTransfer      = "update tchain_transfer set xto = ?, amount = ? where txhash = ?"
+	_selectTokenTxList                 = "select case when b.chain_id = ? then b.xkey else b.txhash end as txhash,a.xfrom,a.xto,a.amount,b.height,b.tt,1 as direct from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.asset = ? union all select d.txhash,c.xfrom,c.xto,c.amount,d.height,d.tt,2 as direct from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.asset = ? order by height desc limit ?,?;"
+	_selectTokenTxTotal                = "select sum(cnt) from (select count(*) as cnt from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.asset = ? union all select count(*) as cnt from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.asset = ?) t"
+	_selectAddressTxList               = "select case when b.chain_id = ? then b.xkey else b.txhash end as txhash,a.xfrom,a.xto,a.asset,a.amount,b.height,b.tt,1 as direct from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.xfrom = ? and b.chain_id = ? union all select d.txhash,c.xfrom,c.xto,c.asset,c.amount,d.height,d.tt,2 as direct from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.xto = ? and d.chain_id = ? order by height desc limit ?,?;"
+	_selectAddressTxTotal              = "select sum(cnt) from (select count(*) as cnt from fchain_transfer a left join fchain_tx b on a.txhash = b.txhash where a.xfrom = ? and b.chain_id = ? union all select count(*) as cnt from tchain_transfer c left join tchain_tx d on c.txhash = d.txhash where c.xto = ? and d.chain_id = ?) t"
+	_insertPolyValidator               = "insert into poly_validators(height, validators) values(?,?)"
+	_selectPolyValidator               = "select height, validators from poly_validators order by height desc limit 1"
+	_insertAssetStatistic              = "insert into asset_statistic(xname, addressnum, amount,amount_btc, amount_usd, txnum, latestupdate) values (?,0,0,0,0,0,0) ON DUPLICATE KEY UPDATE txnum=txnum"
+	_selectAssetAddressNum             = "select token, count(distinct addr) as addrNum from (select B.xtoken as token, A.xfrom as addr from fchain_transfer as A inner join chain_token as B on A.asset = B.hash union all select D.xtoken as token, C.xto as addr from tchain_transfer as C inner join chain_token as D on C.asset = D.hash) E group by E.token"
+	_selectAssetTxInfo                 = "select B.xtoken, amount, B.xprecision from fchain_transfer as A inner join chain_token as B on A.asset = B.hash where A.tt >= ? and A.tt < ? order by B.xtoken"
+	_updateStatistic                   = "update asset_statistic set addressnum = ?, amount = amount + ?, amount_btc = amount_btc + ?, amount_usd = amount_usd + ?, txnum = txnum + ?, latestupdate = ? where xname = ? and latestupdate = ?"
+	_selectAssetStatistic              = "select xname, addressnum, amount, amount_btc, amount_usd, txnum, latestupdate from asset_statistic where latestupdate < ? order by amount_usd desc"
+	_selectAssetHistory                = "select A.amount, B.xprecision from fchain_transfer as A inner join chain_token as B on A.asset = B.hash where A.tt >= ? and A.tt < ? and B.xtoken = ?"
+	_insertTransferStatistic           = "insert into transfer_statistic(asset, amount, latestin, latestout) values(?, 0, 0, 0) ON DUPLICATE KEY UPDATE amount=amount"
+	_selectTransferStatistic           = "select asset, amount, latestin, latestout from transfer_statistic"
+	_selectTransferOutHistory          = "select amount, tt from fchain_transfer where asset = ? and tt > ?"
+	_selectTransferInHistory           = "select amount, tt from tchain_transfer where asset = ? and tt > ?"
+	_updateTransferStatistic           = "update transfer_statistic set amount = ?, latestin = ?, latestout = ? where asset = ?"
+	_selectAllTransferStatistic        = "select A.asset, A.amount, B.xtoken, B.id, B.xname, D.xname, D.id  from transfer_statistic A left join chain_token B on A.asset = B.hash left join chain_token_bind C on A.asset = C.hash_src left join chain_token D on C.hash_dest = D.hash"
+	_selectAllTransferStatisticInChain = "select A.asset, A.amount, B.xtoken, B.id, B.xname, D.xname, D.id  from transfer_statistic A left join chain_token B on A.asset = B.hash left join chain_token_bind C on A.asset = C.hash_src left join chain_token D on C.hash_dest = D.hash where B.id = ?"
+)
 
 func (d *Dao) InsertTChainTx(t *model.TChainTx) (err error) {
 	if _, err = d.db.Exec(_insertTChainTx, t.Chain, t.TxHash, t.State, t.TT, t.Fee, t.Height, t.FChain, t.Contract, t.RTxHash); err != nil {
@@ -116,7 +116,7 @@ func (d *Dao) TxInsertFChainTx(tx *sql.Tx, f *model.FChainTx) (err error) {
 	}
 	if f.Transfer != nil && f.Transfer.TxHash != "" {
 		transfer := f.Transfer
-		if _, err = tx.Exec(_insertFChainTransfer,transfer.TxHash,f.Chain, f.TT,transfer.Asset,transfer.From,transfer.To,transfer.Amount.String(), transfer.ToChain,transfer.ToAsset,transfer.ToUser); err != nil {
+		if _, err = tx.Exec(_insertFChainTransfer, transfer.TxHash, f.Chain, f.TT, transfer.Asset, transfer.From, transfer.To, transfer.Amount.String(), transfer.ToChain, transfer.ToAsset, transfer.ToUser); err != nil {
 			return
 		}
 	}
@@ -129,7 +129,6 @@ func (d *Dao) TxInsertMChainTx(tx *sql.Tx, m *model.MChainTx) (err error) {
 	}
 	return
 }
-
 
 func (d *Dao) SelectAllChainInfos() (c []*model.ChainInfo, err error) {
 	var rows *sql.Rows
@@ -305,7 +304,7 @@ func (d *Dao) SelectFChainTxByHash1(hash string, chain uint32) (res *model.FChai
 
 func (d *Dao) SelectFChainTxByTime(start uint32, end uint32) (res []*model.CrossChainTxStatus, err error) {
 	var rows *sql.Rows
-	if rows, err  = d.db.Query(_selectFChainTxByTime, start, end); err != nil {
+	if rows, err = d.db.Query(_selectFChainTxByTime, start, end); err != nil {
 		return
 	}
 	defer rows.Close()
@@ -376,7 +375,7 @@ func (d *Dao) SelectTChainTxByMHash(hash string) (res *model.TChainTx, err error
 
 func (d *Dao) SelectTChainTxByTime(start uint32, end uint32) (res []*model.CrossChainTxStatus, err error) {
 	var rows *sql.Rows
-	if rows, err  = d.db.Query(_selectTChainTxByTime, start, end); err != nil {
+	if rows, err = d.db.Query(_selectTChainTxByTime, start, end); err != nil {
 		return
 	}
 	defer rows.Close()
@@ -392,7 +391,6 @@ func (d *Dao) SelectTChainTxByTime(start uint32, end uint32) (res []*model.Cross
 	err = rows.Err()
 	return
 }
-
 
 func (d *Dao) TxUpdateChainInfoById(tx *sql.Tx, c *model.ChainInfo) (err error) {
 	if _, err = tx.Exec(_updateChainInfoById, c.Name, c.Height, c.In, c.Out, c.Id); err != nil {
@@ -580,7 +578,7 @@ func (d *Dao) InsertAssetStatistic(name string) (err error) {
 	return
 }
 
-func (d *Dao) SelectAssetAddressNum()  (res []*model.AssetAddressNum, err error) {
+func (d *Dao) SelectAssetAddressNum() (res []*model.AssetAddressNum, err error) {
 	var rows *sql.Rows
 	if rows, err = d.db.Query(_selectAssetAddressNum); err != nil {
 		return
@@ -598,11 +596,12 @@ func (d *Dao) SelectAssetAddressNum()  (res []*model.AssetAddressNum, err error)
 }
 
 type AssetTxInfo2 struct {
-	Name string
-	Amount string
+	Name      string
+	Amount    string
+	Precision uint64
 }
 
-func (d *Dao) SelectAssetTxInfo1(start uint32, end uint32)  (res []*AssetTxInfo2, err error) {
+func (d *Dao) SelectAssetTxInfo1(start uint32, end uint32) (res []*AssetTxInfo2, err error) {
 	var rows *sql.Rows
 	if rows, err = d.db.Query(_selectAssetTxInfo, start, end); err != nil {
 		return
@@ -610,7 +609,7 @@ func (d *Dao) SelectAssetTxInfo1(start uint32, end uint32)  (res []*AssetTxInfo2
 	defer rows.Close()
 	for rows.Next() {
 		r := new(AssetTxInfo2)
-		if err = rows.Scan(&r.Name, &r.Amount); err != nil {
+		if err = rows.Scan(&r.Name, &r.Amount, &r.Precision); err != nil {
 			res = nil
 			return
 		}
@@ -619,7 +618,7 @@ func (d *Dao) SelectAssetTxInfo1(start uint32, end uint32)  (res []*AssetTxInfo2
 	return res, nil
 }
 
-func (d *Dao) SelectAssetTxInfo(start uint32, end uint32)  (res []*model.AssetTxInfo, err error) {
+func (d *Dao) SelectAssetTxInfo(start uint32, end uint32) (res []*model.AssetTxInfo, err error) {
 	oriRes, err := d.SelectAssetTxInfo1(start, end)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -642,12 +641,15 @@ func (d *Dao) SelectAssetTxInfo(start uint32, end uint32)  (res []*model.AssetTx
 			}
 		}
 		r.Name = item.Name
-		r.TxNum ++
+		r.TxNum++
 
 		amount := big.NewInt(0)
 		amount, ok := new(big.Int).SetString(item.Amount, 10)
 		if !ok {
 			amount = big.NewInt(0)
+		} else {
+			amount = new(big.Int).Mul(amount, new(big.Int).SetInt64(100))
+			amount = new(big.Int).Div(amount, big.NewInt(int64(item.Precision)))
 		}
 		r.Amount = new(big.Int).Add(r.Amount, amount)
 	}
@@ -671,7 +673,7 @@ func (d *Dao) UpdateAssetStatistics(assetStatistics []*model.AssetStatistic, tt 
 }
 
 func (d *Dao) UpdateAssetStatistic(assetStatistic *model.AssetStatistic, tt uint32) (err error) {
-	if _, err = d.db.Exec(_updateStatistic, assetStatistic.Addressnum, assetStatistic.Amount.Int64(), assetStatistic.Amount_btc.Int64(), assetStatistic.Amount_usd.Int64(),assetStatistic.TxNum, tt, assetStatistic.Name, assetStatistic.LatestUpdate); err != nil {
+	if _, err = d.db.Exec(_updateStatistic, assetStatistic.Addressnum, assetStatistic.Amount.Int64(), assetStatistic.Amount_btc.Int64(), assetStatistic.Amount_usd.Int64(), assetStatistic.TxNum, tt, assetStatistic.Name, assetStatistic.LatestUpdate); err != nil {
 		return err
 	}
 	return nil
@@ -701,7 +703,8 @@ func (d *Dao) SelectAssetStatistic(tt uint32) (res []*model.AssetStatistic, err 
 }
 
 type AssetTxInfo1 struct {
-	Amount  string
+	Amount    string
+	Precision uint64
 }
 
 func (d *Dao) SelectAssetHistory1(start uint32, end uint32, name string) (res []*AssetTxInfo1, err error) {
@@ -712,7 +715,7 @@ func (d *Dao) SelectAssetHistory1(start uint32, end uint32, name string) (res []
 	defer rows.Close()
 	for rows.Next() {
 		r := new(AssetTxInfo1)
-		if err = rows.Scan(&r.Amount); err != nil {
+		if err = rows.Scan(&r.Amount, &r.Precision); err != nil {
 			res = nil
 			return
 		}
@@ -721,7 +724,7 @@ func (d *Dao) SelectAssetHistory1(start uint32, end uint32, name string) (res []
 	return res, nil
 }
 
-func (d *Dao) SelectAssetHistory(start uint32, end uint32, name string)  (res *model.AssetTxInfo, err error) {
+func (d *Dao) SelectAssetHistory(start uint32, end uint32, name string) (res *model.AssetTxInfo, err error) {
 	res = new(model.AssetTxInfo)
 	res.Name = name
 	res.Amount = big.NewInt(0)
@@ -737,13 +740,15 @@ func (d *Dao) SelectAssetHistory(start uint32, end uint32, name string)  (res *m
 		amount, ok := new(big.Int).SetString(item.Amount, 10)
 		if !ok {
 			amount = big.NewInt(0)
+		} else {
+			amount = new(big.Int).Mul(amount, new(big.Int).SetInt64(100))
+			amount = new(big.Int).Div(amount, big.NewInt(int64(item.Precision)))
 		}
 		res.Amount = new(big.Int).Add(res.Amount, amount)
-		res.TxNum ++
+		res.TxNum++
 	}
 	return
 }
-
 
 func (d *Dao) InsertTransferStatistic(hash string) (err error) {
 	if _, err = d.db.Exec(_insertTransferStatistic, hash); err != nil {
@@ -771,10 +776,9 @@ func (d *Dao) SelectTransferStatistic() (res []*model.TransferStatistic, err err
 	return res, nil
 }
 
-
 type TransferTxInfo1 struct {
-	Amount  string
-	TT   uint32
+	Amount string
+	TT     uint32
 }
 
 func (d *Dao) SelectTransferOutHistory1(start uint32, hash string) (res []*TransferTxInfo1, err error) {
@@ -794,7 +798,7 @@ func (d *Dao) SelectTransferOutHistory1(start uint32, hash string) (res []*Trans
 	return res, nil
 }
 
-func (d *Dao) SelectTransferOutHistory(start uint32, hash string)  (res *model.TransferTxInfo, err error) {
+func (d *Dao) SelectTransferOutHistory(start uint32, hash string) (res *model.TransferTxInfo, err error) {
 	res = new(model.TransferTxInfo)
 	res.Hash = hash
 	res.Amount = big.NewInt(0)
@@ -839,7 +843,7 @@ func (d *Dao) SelectTransferInHistory1(start uint32, hash string) (res []*Transf
 	return res, nil
 }
 
-func (d *Dao) SelectTransferInHistory(start uint32, hash string)  (res *model.TransferTxInfo, err error) {
+func (d *Dao) SelectTransferInHistory(start uint32, hash string) (res *model.TransferTxInfo, err error) {
 	res = new(model.TransferTxInfo)
 	res.Hash = hash
 	res.Amount = big.NewInt(0)
@@ -873,7 +877,6 @@ func (d *Dao) UpdateTransferStatistic(transferStatistic *model.TransferStatistic
 	}
 	return nil
 }
-
 
 func (d *Dao) SelectAllTransferStatistic(chainid int) (res []*model.AllTransferStatistic, err error) {
 	var rows *sql.Rows
